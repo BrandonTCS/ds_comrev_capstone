@@ -114,13 +114,6 @@ logging.getLogger('selenium').setLevel(logging.CRITICAL)
 
 def scrape(field, review, author):
 
-##    def scrape_date(review):
-##        date = review.tag_name(
-##            'time').get_attribute('datetime')
-##        time_index = date.find(':') - 3
-##        res = date[:time_index]
-##        return res
-
     def scrape_emp_title(review):
         if 'Anonymous Employee' not in review.text:
             try:
@@ -154,15 +147,7 @@ def scrape(field, review, author):
         return res
 
     def scrape_rev_title(review):
-        return review.find_element(By.CLASS_NAME,'summary').text.strip('"')
-
-    def scrape_helpful(review):
-        try:
-            helpful = review.find_element(By.CLASS_NAME,'helpfulCount')
-            res = helpful.text[helpful.text.find('(') + 1: -1]
-        except Exception:
-            res = 0
-        return res
+        return review.find_element(By.CLASS_NAME,'reviewLink').text.strip('"')
 
     def expand_show_more(section):
         try:
@@ -184,7 +169,7 @@ def scrape(field, review, author):
 
     def scrape_cons(review):
         try:
-            cons = review._class_name('gdReview')
+            cons = review.find_element(By.CLASS_NAME,'gdReview')
             expand_show_more(cons)
             con_index = cons.text.find('Cons')
             continue_index = cons.text.find('Continue reading')
@@ -193,110 +178,23 @@ def scrape(field, review, author):
             res = np.nan
         return res
 
-    def scrape_advice(review):
-        try:
-            advice = review.find_element(By.CLASS_NAME,'gdReview')
-            expand_show_more(advice)
-            advice_index = advice.text.find('Advice to Management')
-            if advice_index != -1:
-                helpful_index = advice.text.rfind('Helpful (')
-                res = advice.text[advice_index+21 : helpful_index]
-            else:
-                res = np.nan
-        except Exception:
-            res = np.nan
-        return res
-
     def scrape_overall_rating(review):
         try:
-            ratings = review.find_element(By.CLASS_NAME,'gdStars')
+            ratings = review.find_element(By.CLASS_NAME,'ratingNumber')
             res = float(ratings.text[:3])
         except Exception:
             res = np.nan
         return res
 
-    def _scrape_subrating(i):
-        try:
-            ratings = review.find_element(By.CLASS_NAME,'gdStars')
-            subratings = ratings.find_element(By.CLASS_NAME,
-                'subRatings').find_element(By.TAG_NAME, 'ul')
-            this_one = subratings.find_elements(By.TAG_NAME, 'li')[i]
-            res = this_one.find_element(By.CLASS_NAME,
-                'gdBars').get_attribute('title')
-        except Exception:
-            res = np.nan
-        return res
-
-    def scrape_work_life_balance(review):
-        return _scrape_subrating(0)
-
-    def scrape_culture_and_values(review):
-        return _scrape_subrating(1)
-
-    def scrape_career_opportunities(review):
-        return _scrape_subrating(2)
-
-    def scrape_comp_and_benefits(review):
-        return _scrape_subrating(3)
-
-    def scrape_senior_management(review):
-        return _scrape_subrating(4)
-
-
-    def scrape_recommends(review):
-        try:
-            res = review.find_element(By.CLASS_NAME,'recommends').text
-            res = res.split('\n')
-            return res[0]
-        except:
-            return np.nan
-    
-    def scrape_outlook(review):
-        try:
-            res = review.find_element(By.CLASS_NAME,'recommends').text
-            res = res.split('\n')
-            if len(res) == 2 or len(res) == 3:
-                if 'CEO' in res[1]:
-                    return np.nan
-                return res[1]
-            return np.nan
-        except:
-            return np.nan
-    
-    def scrape_approve_ceo(review):
-        try:
-            res = review.find_element(By.CLASS_NAME,'recommends').text
-            res = res.split('\n')
-            if len(res) == 3:
-                return res[2]
-            if len(res) == 2:
-                if 'CEO' in res[1]:
-                    return res[1]
-            return np.nan
-        except:
-            return np.nan
-
 
     funcs = [
-##        scrape_date,
         scrape_emp_title,
         scrape_location,
         scrape_status,
         scrape_rev_title,
-        scrape_helpful,
         scrape_pros,
         scrape_cons,
-        scrape_advice,
-        scrape_overall_rating,
-        scrape_work_life_balance,
-        scrape_culture_and_values,
-        scrape_career_opportunities,
-        scrape_comp_and_benefits,
-        scrape_senior_management,
-        scrape_recommends,
-        scrape_outlook,
-        scrape_approve_ceo
-
+        scrape_overall_rating
     ]
 
     fdict = dict((s, f) for (s, f) in zip(SCHEMA, funcs))
@@ -346,8 +244,8 @@ def extract_from_page():
         if not is_featured(review):
             data = extract_review(review)
             if data != None:
-                logger.info(f'Scraped data for "{data["review_title"]}"\
-    ({data["date"]})')
+                logger.info(f'Scraped data for "{data["review_title"]}"')
+##                            \{data["date"]})')
                 res.loc[idx[0]] = data
             else:
                 logger.info('Discarding a blocked review')
@@ -384,11 +282,9 @@ def go_to_next_page():
     time.sleep(5) # wait for ads to load
     page[0] = page[0] + 1
 
-
 def no_reviews():
     return False
     # TODO: Find a company with no reviews to test on
-
 
 def navigate_to_reviews():
     logger.info('Navigating to company reviews')
