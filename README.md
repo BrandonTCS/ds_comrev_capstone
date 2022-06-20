@@ -1,4 +1,4 @@
-# This is capstone project with the mind to drive the economy through improving manpower sortage issue and also to address the escalating mental health cases globally.
+# This is capstone project with the objective to drive the economy through improving manpower sortage issue and also to address the escalating mental health cases globally.
 
 Credit to Matthew Chatham for glassdoor scraper to extract the employee reviews. Some updates has been made to the orginal scraper due to changes in Glassdoor codes over the years.
 
